@@ -18,6 +18,7 @@ extract_subtitles.py — 视频 OCR 字幕提取器
 """
 import argparse
 import cv2
+import difflib
 import json
 import os
 import subprocess
@@ -29,6 +30,11 @@ def get_texts(r):
     if isinstance(r, dict):
         return r.get("rec_texts", []) or []
     return getattr(r, "rec_texts", []) or []
+
+
+def similarity(a, b):
+    # 字符级相似度（0~1），用于把“同一句字幕的近似读”合并成一条
+    return difflib.SequenceMatcher(None, a, b).ratio()
 
 
 def build_crop(mode, custom):
@@ -104,6 +110,11 @@ def main():
                     help="自定义 ffmpeg crop 表达式，覆盖 --mode（高级用法）")
     ap.add_argument("--typo-map", default=None,
                     help="可选：错字修正 JSON（{\"错字\":\"正字\"}），逐条 replace")
+    ap.add_argument("--merge-threshold", type=float, default=0.8,
+                    help="相似度合并阈值（0~1）：>=此值视为同一句字幕的近似读，不重复输出。"
+                         "设 1.0 等于「仅完全相同才合并」")
+    ap.add_argument("--no-merge", action="store_true",
+                    help="关闭相似度合并，退回「相邻完全相同才去重」的旧逻辑")
     args = ap.parse_args()
 
     out_abs = os.path.abspath(args.out)
@@ -130,17 +141,22 @@ def main():
             txt = " ".join(get_texts(r))
             for wrong, right in typo_map.items():
                 txt = txt.replace(wrong, right)
+            txt = " ".join(txt.split())  # 去首尾/折叠多余空白，消灭“ 多空格”类噪声
             sec = int(i / max(args.fps, 1))
             m, s = divmod(sec, 60)
             stamp = f"[{m:02d}:{s:02d}]"
-            fraw.write(f"{stamp} {txt}\n")  # 所有帧都写（不过滤不去重）
-            if txt and txt != prev:
+            fraw.write(f"{stamp} {txt}\n")  # 所有帧都写（不过滤不去重），供核对
+            if not txt:
+                prev = None
+                continue
+            if prev is None:
                 results.append(f"{stamp} {txt}")
                 prev = txt
-            elif txt:
+            elif args.no_merge or similarity(prev, txt) < args.merge_threshold:
+                # 明显不同（或关了合并）→ 新一句字幕，输出
+                results.append(f"{stamp} {txt}")
                 prev = txt
-            else:
-                prev = None
+            # 否则：相似度够高 = 同一句字幕的近似读（多空格/多O等），跳过不重复输出
             if i % 10 == 0:
                 print(f"{i}/{len(files)}", flush=True)
 

@@ -44,6 +44,10 @@ python extract_subtitles.py --video clip.mp4 --out subs.txt --typo-map typoMap.e
 | `--frames-dir` | 抽帧临时目录 | `<out 同目录>/_frames` |
 | `--typo-map` | 错字修正 JSON（见下） | 无 |
 | `--crop` | 自定义 ffmpeg 裁剪表达式，覆盖 `--mode` | 无 |
+| `--merge-threshold` | 相似度合并阈值（0~1）：>=此值视为同一句字幕的近似读，不重复输出 | `0.8` |
+| `--no-merge` | 关闭相似度合并，退回「相邻完全相同才去重」的旧逻辑 | 关 |
+
+默认开启**相似度合并**（阈值 `0.8`）：同一句字幕在不同帧上被读成「多空格 / 多 O」之类的近似读，只保留一条，避免清单出现重复噪声。想退回「相邻完全相同才去重」的旧逻辑，加 `--no-merge`；想调灵敏度改 `--merge-threshold`（设 `1.0` 等于只合并完全相同的）。注意：合并只去"近义重复"噪声，救不了"真·认错字"，错字仍要靠 `_raw_` 翻截图核对。
 
 运行后生成两份文件（以 `--out subs.txt` 为例）：
 
