@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 运行产物（脚本跑起来会生成的，不要进仓库）
+_frames/
+_frames*/
+_raw_*.txt
+subs*.txt
+
+# 环境 / 系统
+.env
+.DS_Store
+Thumbs.db
