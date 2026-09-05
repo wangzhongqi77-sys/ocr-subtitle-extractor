@@ -88,9 +88,10 @@ OCR **会漏读**——低对比度、特殊字体、画面叠加文字都可能
 1. **提取即可核对，不怕漏读**。同时输出 `_raw_字幕.txt`（每一帧原始 OCR，不过滤不去重）和精修版。OCR 会漏读低对比度 / 特殊字体的字——本工具强制你翻空白帧截图核对漏句。大工具只管「吐字幕」，不管你漏没漏。
 2. **踩坑经验写进文档**。多帧投票救不了漏读、SSIM 跳帧会漏内容、双层字幕（抖音类「顶部花字卖点 + 底部口播」）要用 `full` 模式——这些是用真视频一帧帧试出来的，全写在 `SKILL.md` 里，不让你踩第二遍。
 3. **单文件、零花活**。一个 `extract_subtitles.py`，参数化，ffmpeg 抽帧 + OpenCV 保底，MIT 随便改。没有 GUI、没有 GPU 依赖、没有 Docker，适合想看懂原理、自己改的人。
+4. **对新版 PaddleOCR 开箱即用（关键优势）**。本工具按 PaddleOCR v5 的 `predict()` + `rec_texts` 写法实现。实测：videocr_paddle、HardSubExtract 这类竞品还停在 v3/v4 时代，升级到 PaddleOCR 3.x 后会直接报错（`Unknown argument: show_log / use_gpu / cls`）或解析崩溃——得改好几处代码才跑得起来。换台装了新 PaddleOCR 的机器，本工具直接能跑。详见 `BENCHMARK_对比报告.md`。
 
-> 要「拖个视频一键出 srt」→ 用 VideOCR / VSE 更省事。
-> 要「可审计、可核对、能学明白原理」的提取流程 → 用这个。
+> 要「拖个视频一键出 srt」→ VideOCR / VSE 这类 GUI 工具更省事，但它们本质是 Windows 桌面软件、大多还要 GPU/Docker，在无头/云环境里跑不了；CLI 形态的竞品（videocr_paddle、HardSubExtract）在本机实测需改代码适配新 PaddleOCR。
+> 要「可审计、可核对、能学明白原理、换新版本不崩」的提取流程 → 用这个。
 
 ## License
 
